@@ -1,8 +1,10 @@
 #!/bin/env python
 
+import sys
+import os
 import cesubmit
 #from listFiles import getdcachelist
-import binConfig
+# import binConfig
 import checkEnvironment
 from datetime import datetime
 import optparse,os,time,cPickle,subprocess,shutil,sys
@@ -65,6 +67,25 @@ fi
     exeFile.write(exe)
     exeFile.close()
 
+def handle_LHEs(options, args):
+    print('working with lhe file: %s'%args[0])
+
+    if not os.path.exists('dummy_lhes/'):
+        os.makedirs('dummy_lhes')
+
+    cmd1 = "../../splitLHE.py"
+    cmd2 = "--Nevents=%s"% (options.events)
+    cmd3 = "%s"% (args[0])
+    command = [cmd1,cmd2,cmd3]
+    print " ".join(command)
+    subprocess.call(command)
+
+    thisdir=os.getcwd()
+    filelist = os.listdir(thisdir)
+    for item in filelist:
+        if '.lhe' in item:
+            os.rename(item, 'dummy_lhes/'+item)
+
 
 def main():
 
@@ -73,70 +94,61 @@ def main():
     parser = optparse.OptionParser( usage = usage )
     parser.add_option( '-u', '--user', default = os.getenv( 'LOGNAME' ),
                             help = 'which user on dcache [default = %s]'%(os.getenv( 'LOGNAME' )))
-    parser.add_option( '-o', '--Output', default = '%s'%(binConfig.outDir).replace("USER",os.getlogin())+"/TAG", metavar = 'DIRECTORY',
+    parser.add_option( '-o', '--Output', default = 'output/',
                             help = 'Define the output directory. [default = %default]')
     parser.add_option( '-f', '--force', default = "force the output to overwrite", metavar = 'DIRECTORY',
                             help = 'Define the output directory. [default = %default]')
     parser.add_option( '--debug', metavar = 'LEVEL', default = 'INFO',
                        help= 'Set the debug level. Allowed values: ERROR, WARNING, INFO, DEBUG. [default = %default]' )
-    parser.add_option( '-t', '--Tag', default = "output%s_%s_%s_%s_%s"%(date_time.year,
-                                                                        date_time.month,
-                                                                        date_time.day,
-                                                                        date_time.hour,
-                                                                        date_time.minute), metavar = 'DIRECTORY',
-                        help = 'Define a Tag for the output directory. [default = %default]' )
+    parser.add_option( '--events', default = 100,
+                       help = 'Number of events that should be hadronized per job. [default = %default]')
 
     ( options, args ) = parser.parse_args()
-    #if len( args ) != 1:
-        #parser.error( 'Exactly one CONFIG_FILE required!' )
-    options.Output=options.Output.replace("TAG",options.Tag)
-
+    if len( args ) != 2:
+        parser.error( 'Exactly two CONFIG_FILE required!' )
+        sys.exit(42)
 
     format = '%(levelname)s from %(name)s at %(asctime)s: %(message)s'
     date = '%F %H:%M:%S'
     logging.basicConfig( level = logging._levelNames[ options.debug ], format = format, datefmt = date )
 
     try:
-       cmssw_version, cmssw_base, scram_arch = checkEnvironment.checkEnvironment()
+       cmssw_version, cmssw_base, scram_arch, music_path = checkEnvironment.checkEnvironment()
+       print(cmssw_version, cmssw_base, scram_arch, music_path)
     except EnvironmentError, err:
         log.error( err )
         log.info( 'Exiting...' )
         sys.exit( err.errno )
 
+    handle_LHEs(options, args)
 
-    sampleList={
-    "WprimeToTauNu_M_1000_Tune4C_tauola_13TeV_pythia8":
-      ["WprimeToTauNu_M_1000_Tune4C_tauola_13TeV_pythia8_%d.root"%(i)  for i in range(50,100)]
-    }
-
-
-    makeExe(options.user)
-
-    thisdir=os.getcwd()
-    if os.path.exists(options.Output) or not options.force:
-        log.error("The outpath "+options.Output+" already exists pick a new one or use --force")
-        sys.exit(3)
-    else:
-        os.makedirs(options.Output)
-    shutil.copyfile(thisdir+"/runtemp.sh",options.Output+"/runtemp.sh")
-    os.remove(thisdir+"/runtemp.sh")
-
-    for sample in sampleList:
-        task=cesubmit.Task(sample,options.Output+"/"+sample,scramArch=scram_arch, cmsswVersion=cmssw_version)
-
-        task.executable=options.Output+"/runtemp.sh"
-        task.inputfiles=[thisdir+"/Wprime-Phys14DR_cfg.py"]
-        #task.outputfiles=[""]
-
-
-        standardArg=[sample]
-
-        for f in sampleList[sample]:
-            job=cesubmit.Job()
-            job.arguments=standardArg+[f]
-            task.addJob(job)
-        log.info("start submitting "+sample)
-        task.submit(6)
+    # makeExe(options.user)
+# 
+    # thisdir=os.getcwd()
+    # if os.path.exists(options.Output) or not options.force:
+        # log.error("The outpath "+options.Output+" already exists pick a new one or use --force")
+        # sys.exit(3)
+    # else:
+        # os.makedirs(options.Output)
+    # shutil.copyfile(thisdir+"/runtemp.sh",options.Output+"/runtemp.sh")
+    # os.remove(thisdir+"/runtemp.sh")
+# 
+    # for sample in sampleList:
+        # task=cesubmit.Task(sample,options.Output+"/"+sample,scramArch=scram_arch, cmsswVersion=cmssw_version)
+# 
+        # task.executable=options.Output+"/runtemp.sh"
+        # task.inputfiles=[thisdir+"/Wprime-Phys14DR_cfg.py"]
+        # #task.outputfiles=[""]
+# 
+# 
+        # standardArg=[sample]
+# 
+        # for f in sampleList[sample]:
+            # job=cesubmit.Job()
+            # job.arguments=standardArg+[f]
+            # task.addJob(job)
+        # log.info("start submitting "+sample)
+        # task.submit(6)
 
 
     log.info("Thanks for zapping in, bye bye")
@@ -146,3 +158,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+    
