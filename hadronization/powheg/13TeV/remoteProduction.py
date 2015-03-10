@@ -10,7 +10,7 @@ from datetime import datetime
 import optparse,os,time,cPickle,subprocess,shutil,sys
 import logging
 log = logging.getLogger( 'remote' )
-
+from terminalFunctions import update_progress
 
 
 
@@ -82,10 +82,44 @@ def handle_LHEs(options, args):
 
     thisdir=os.getcwd()
     filelist = os.listdir(thisdir)
+    lhe_file_list = []
     for item in filelist:
         if '.lhe' in item:
-            os.rename(item, 'dummy_lhes/'+item)
+            lhe_file_list.append(item)
+    for item in lhe_file_list:
+        os.rename(item, 'dummy_lhes/'+item)
 
+    mdir=["uberftp","grid-ftp.physik.rwth-aachen.de","rm /pnfs/physik.rwth-aachen.de/cms/store/user/serdweg/MC/*"]
+
+    subprocess.call(mdir)
+
+    mdir=["uberftp","grid-ftp.physik.rwth-aachen.de","rmdir /pnfs/physik.rwth-aachen.de/cms/store/user/serdweg/MC"]
+
+    subprocess.call(mdir)
+
+    mdir=["uberftp","grid-ftp.physik.rwth-aachen.de","mkdir /pnfs/physik.rwth-aachen.de/cms/store/user/serdweg/MC/"]
+
+    subprocess.call(mdir)
+
+    update_progress(0)
+    counter = 0
+    for file in lhe_file_list:
+        path = "srm://grid-srm.physik.rwth-aachen.de:8443/pnfs/physik.rwth-aachen.de/cms/store/user/serdweg/MC/"
+        cmd1 = "srmcp"
+        cmd2 = "file:///%s/%s"% (thisdir+"/dummy_lhes",file)
+        cmd3 = "%s%s"% (path,file)
+        command = [cmd1,cmd2,cmd3]
+        subprocess.call(command)
+        counter += 1
+        update_progress(float(counter)/float(len(lhe_file_list)))
+
+    cmd1 = "rm"
+    cmd2 = "-r"
+    cmd3 = "dummy_lhes/"
+    command = [cmd1,cmd2,cmd3]
+    subprocess.call(command)
+
+    return lhe_file_list
 
 def main():
 
@@ -120,7 +154,7 @@ def main():
         log.info( 'Exiting...' )
         sys.exit( err.errno )
 
-    handle_LHEs(options, args)
+    lhe_file_list = handle_LHEs(options, args)
 
     # makeExe(options.user)
 # 
