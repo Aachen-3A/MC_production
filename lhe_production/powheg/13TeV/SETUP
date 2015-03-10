@@ -1,0 +1,28 @@
+1.  Setup your CMSSW enviroment (tested with CMSSW_7_2_3_patch1)
+
+2.  cd into CMSSW_X_Y_Z/src
+
+    details can be found at https://twiki.cern.ch/twiki/bin/viewauth/CMS/PowhegBOXPrecompiled
+
+3.  git clone git@github.com:cms-sw/genproductions.git genproductions
+
+4.  mv genproductions/bin/Powheg/*.sh .
+
+5.  mv genproductions/bin/Powheg/patches .
+
+6.  cmsenv
+
+7.  ./create_powheg_tarball.sh slc6_amd64_gcc481/powheg/V2.0/src powhegboxV2_Feb2015 WW ../...input WW_example none 100 12312
+
+    Now you have created the tarball, this can now run locally or in official production
+
+    To run locally you have to do the following:
+
+8.  make a directory where to run the lhe production:
+    mkdir temp
+
+9.  cd temp
+
+10. tar xvzf ../WW_example_tarball.tar.gz
+
+11. ./runcmsgrid.sh <numberOfEvents> <RandomSeed> 1
