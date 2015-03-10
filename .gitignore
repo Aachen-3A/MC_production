@@ -3,3 +3,5 @@ WW_powheg*
 hadronization/lhes/
 plots/
 mergeLheFiles
+*.root
+*.pxlio
