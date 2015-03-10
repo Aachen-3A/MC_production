@@ -5,3 +5,5 @@ plots/
 mergeLheFiles
 *.root
 *.pxlio
+hadronization/powheg/13TeV/output
+hadronization/powheg/13TeV/LHE_hadronization

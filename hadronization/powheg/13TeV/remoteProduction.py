@@ -14,61 +14,63 @@ from terminalFunctions import update_progress
 
 
 
-def makeExe(user):
+def makeExe():
     from string import Template
     exe="""
 echo Copying pack...
 
-mkdir -p CMSSW_7_0_6_patch1/src/A/A/data/
-
-name=$1
-file=$2
-echo $name
+user=$1
+tag=$2
+outfolderName=$3
+file=$4
+outfileName=${file/".lhe"/".root"}
+echo $outfileName
 echo $file
 
-sed -i "s/PROC_NAME/$name/g" Wprime-Phys14DR_cfg.py
-sed -i "s/File_NAME/$file/g" Wprime-Phys14DR_cfg.py
+uberftp grid-ftp.physik.rwth-aachen.de "cd /pnfs/physik.rwth-aachen.de/cms/store/user/$user/MC; get $file"
 
-cat Wprime-Phys14DR_cfg.py
-cmsRun Wprime-Phys14DR_cfg.py
+ls -l
 
+sed -i "s/File_NAME/$file/g" hadronizer_match_pu_2_cfg.py
 
-outfileName="$file"
+cat hadronizer_match_pu_2_cfg.py
+cmsRun hadronizer_match_pu_2_cfg.py
 
+ls -l
 
-uberftp grid-ftp.physik.rwth-aachen.de mkdir "/pnfs/physik.rwth-aachen.de/cms/store/user/padeken/MC/miniAOD/$name/$outfileName"
+cmsRun miniAOD-prod_PAT.py
 
-#uberftp grid-ftp.physik.rwth-aachen.de rm /pnfs/physik.rwth-aachen.de/cms/store/user/padeken/MC/miniAOD/$name/$outfileName
-#lcg-cp file:///`pwd`/DM_out.root srm://grid-srm.physik.rwth-aachen.de:8443/pnfs/physik.rwth-aachen.de/cms/store/user/padeken/MC/miniAOD/$name/$outfileName
-uberftp grid-ftp.physik.rwth-aachen.de "mkdir /pnfs/physik.rwth-aachen.de/cms/store/user/padeken/MC/miniAOD/$name/$outfileName"
+ls -l
 
-#uberftp grid-ftp.physik.rwth-aachen.de rm /pnfs/physik.rwth-aachen.de/cms/store/user/padeken/MC/miniAOD/$name/$outfileName
-#lcg-cp file:///`pwd`/DM_out.root srm://grid-srm.physik.rwth-aachen.de:8443/pnfs/physik.rwth-aachen.de/cms/store/user/padeken/MC/miniAOD/$name/$outfileName
+rm test.root
 
+ls -l
 
-uberftp grid-ftp.physik.rwth-aachen.de "rm /pnfs/physik.rwth-aachen.de/cms/store/user/padeken/MC/miniAOD/$name/$outfileName"
 #Try 10 times to copy the pack file with help of srmcp.
 success=false
 for i in {1..10}; do
-   if lcg-cp file:///`pwd`/DM_out.root srm://grid-srm.physik.rwth-aachen.de:8443/pnfs/physik.rwth-aachen.de/cms/store/user/padeken/MC/miniAOD/$name/$outfileName; then
+   if srmcp -debug file:///`pwd`/miniAOD-prod_PAT.root srm://grid-srm.physik.rwth-aachen.de:8443/pnfs/physik.rwth-aachen.de/cms/store/user/$user/MC/$outfolderName/$outfileName; then
       success=true
       break
    fi
 done
+
 if ! $success; then
-   echo Copying of pack file \\\'lcg-cp file:///`pwd`/test.root srm://grid-srm.physik.rwth-aachen.de:8443/pnfs/physik.rwth-aachen.de/cms/store/user/padeken/MC/miniAOD/$name/$outfileName\\\' failed! 1>&2
-   echo Did you forget to \\\'remix --copy\\\'? 1>&2
+   echo Copying of pack file \\\'srmcp file:///`pwd`/miniAOD-prod_PAT.root srm://grid-srm.physik.rwth-aachen.de:8443/pnfs/physik.rwth-aachen.de/cms/store/user/$user/MC/$outfolderName/$outfileName\\\' failed! 1>&2
 fi
 
+rm miniAOD-prod_PAT.root
 
 """
 
-    exeFile=open("runtemp.sh","w+")
+    thisdir=os.getcwd()
+    exeFile=open(thisdir+"/output/runtemp.sh","w+")
     exeFile.write(exe)
     exeFile.close()
 
+
 def handle_LHEs(options, args):
-    print('working with lhe file: %s'%args[0])
+    log.info('working with lhe file: %s'%args[0])
 
     if not os.path.exists('dummy_lhes/'):
         os.makedirs('dummy_lhes')
@@ -77,7 +79,7 @@ def handle_LHEs(options, args):
     cmd2 = "--Nevents=%s"% (options.events)
     cmd3 = "%s"% (args[0])
     command = [cmd1,cmd2,cmd3]
-    print " ".join(command)
+    log.info( " ".join(command))
     subprocess.call(command)
 
     thisdir=os.getcwd()
@@ -89,22 +91,26 @@ def handle_LHEs(options, args):
     for item in lhe_file_list:
         os.rename(item, 'dummy_lhes/'+item)
 
-    mdir=["uberftp","grid-ftp.physik.rwth-aachen.de","rm /pnfs/physik.rwth-aachen.de/cms/store/user/serdweg/MC/*"]
+    mdir=["uberftp","grid-ftp.physik.rwth-aachen.de","rm /pnfs/physik.rwth-aachen.de/cms/store/user/%s/MC/*"%options.user]
 
     subprocess.call(mdir)
 
-    mdir=["uberftp","grid-ftp.physik.rwth-aachen.de","rmdir /pnfs/physik.rwth-aachen.de/cms/store/user/serdweg/MC"]
+    mdir=["uberftp","grid-ftp.physik.rwth-aachen.de","rmdir /pnfs/physik.rwth-aachen.de/cms/store/user/%s/MC"%options.user]
 
     subprocess.call(mdir)
 
-    mdir=["uberftp","grid-ftp.physik.rwth-aachen.de","mkdir /pnfs/physik.rwth-aachen.de/cms/store/user/serdweg/MC/"]
+    mdir=["uberftp","grid-ftp.physik.rwth-aachen.de","mkdir /pnfs/physik.rwth-aachen.de/cms/store/user/%s/MC/"%options.user]
 
     subprocess.call(mdir)
+
+    log.info( ' ' )
+    log.info( ' Now starting to copy the LHEs to the dcache' )
+    log.info( ' ' )
 
     update_progress(0)
     counter = 0
     for file in lhe_file_list:
-        path = "srm://grid-srm.physik.rwth-aachen.de:8443/pnfs/physik.rwth-aachen.de/cms/store/user/serdweg/MC/"
+        path = "srm://grid-srm.physik.rwth-aachen.de:8443/pnfs/physik.rwth-aachen.de/cms/store/user/%s/MC/"%options.user
         cmd1 = "srmcp"
         cmd2 = "file:///%s/%s"% (thisdir+"/dummy_lhes",file)
         cmd3 = "%s%s"% (path,file)
@@ -119,6 +125,10 @@ def handle_LHEs(options, args):
     command = [cmd1,cmd2,cmd3]
     subprocess.call(command)
 
+    log.info( ' ' )
+    log.info( ' done with the moving' )
+    log.info( ' ' )
+
     return lhe_file_list
 
 def main():
@@ -128,7 +138,7 @@ def main():
     parser = optparse.OptionParser( usage = usage )
     parser.add_option( '-u', '--user', default = os.getenv( 'LOGNAME' ),
                             help = 'which user on dcache [default = %s]'%(os.getenv( 'LOGNAME' )))
-    parser.add_option( '-o', '--Output', default = 'output/',
+    parser.add_option( '-o', '--Output', default = 'test_run/',
                             help = 'Define the output directory. [default = %default]')
     parser.add_option( '-f', '--force', default = "force the output to overwrite", metavar = 'DIRECTORY',
                             help = 'Define the output directory. [default = %default]')
@@ -136,6 +146,10 @@ def main():
                        help= 'Set the debug level. Allowed values: ERROR, WARNING, INFO, DEBUG. [default = %default]' )
     parser.add_option( '--events', default = 100,
                        help = 'Number of events that should be hadronized per job. [default = %default]')
+    parser.add_option( '-t', '--Tag', default = "%s-%s-%s"%(date_time.year,
+                                                            date_time.month,
+                                                            date_time.day), metavar = 'DIRECTORY',
+                        help = 'Define a Tag for the output directory. [default = %default]' )
 
     ( options, args ) = parser.parse_args()
     if len( args ) != 2:
@@ -147,8 +161,7 @@ def main():
     logging.basicConfig( level = logging._levelNames[ options.debug ], format = format, datefmt = date )
 
     try:
-       cmssw_version, cmssw_base, scram_arch, music_path = checkEnvironment.checkEnvironment()
-       print(cmssw_version, cmssw_base, scram_arch, music_path)
+       music_path, cmssw_version, cmssw_base, scram_arch = checkEnvironment.checkEnvironment()
     except EnvironmentError, err:
         log.error( err )
         log.info( 'Exiting...' )
@@ -156,40 +169,33 @@ def main():
 
     lhe_file_list = handle_LHEs(options, args)
 
-    # makeExe(options.user)
-# 
-    # thisdir=os.getcwd()
-    # if os.path.exists(options.Output) or not options.force:
-        # log.error("The outpath "+options.Output+" already exists pick a new one or use --force")
-        # sys.exit(3)
-    # else:
-        # os.makedirs(options.Output)
-    # shutil.copyfile(thisdir+"/runtemp.sh",options.Output+"/runtemp.sh")
-    # os.remove(thisdir+"/runtemp.sh")
-# 
-    # for sample in sampleList:
-        # task=cesubmit.Task(sample,options.Output+"/"+sample,scramArch=scram_arch, cmsswVersion=cmssw_version)
-# 
-        # task.executable=options.Output+"/runtemp.sh"
-        # task.inputfiles=[thisdir+"/Wprime-Phys14DR_cfg.py"]
-        # #task.outputfiles=[""]
-# 
-# 
-        # standardArg=[sample]
-# 
-        # for f in sampleList[sample]:
-            # job=cesubmit.Job()
-            # job.arguments=standardArg+[f]
-            # task.addJob(job)
-        # log.info("start submitting "+sample)
-        # task.submit(6)
+    mdir=["uberftp","grid-ftp.physik.rwth-aachen.de","mkdir /pnfs/physik.rwth-aachen.de/cms/store/user/%s/MC/%s"%(options.user,options.Output)]
 
+    subprocess.call(mdir)
+
+    thisdir=os.getcwd()
+
+    if not os.path.exists(thisdir+'/output'):
+        os.makedirs(thisdir+'/output')
+
+    makeExe()
+
+    task=cesubmit.Task('LHE_hadronization',scramArch=scram_arch, cmsswVersion=cmssw_version)
+
+    task.executable=thisdir+"/output/runtemp.sh"
+    task.inputfiles=[thisdir+"/hadronizer_match_pu_2_cfg.py", thisdir+"/miniAOD-prod_PAT.py"]
+
+    standardArg=[options.user,options.Tag,options.Output]
+
+    for f in lhe_file_list:
+        job=cesubmit.Job()
+        job.arguments=standardArg+[f]
+        task.addJob(job)
+
+    task.submit(6)
 
     log.info("Thanks for zapping in, bye bye")
-    log.info("The out files will be in "+options.Output)
-
-
+    log.info("The out files will be in "+thisdir+'/output')
 
 if __name__ == '__main__':
     main()
-    

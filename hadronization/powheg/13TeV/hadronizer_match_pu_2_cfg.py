@@ -41,7 +41,7 @@ process.maxEvents = cms.untracked.PSet(
 
 # Input source
 process.source = cms.Source("LHESource",
-    fileNames = cms.untracked.vstring('file:/disk1/erdweg/MC_production/WW_powheg_leptonic/merged.lhe')
+    fileNames = cms.untracked.vstring('file:File_NAME')
 )
 
 process.options = cms.untracked.PSet(
