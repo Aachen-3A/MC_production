@@ -52,7 +52,7 @@ process.source = cms.Source(
         #'/store/cmst3/user/gpetrucc/miniAOD/v1/DYJetsToLL_M-50_13TeV-madgraph-pythia8_Flat20to50_PAT.root'
         #'file://WprimeTauMiniAOD.root'
         #'/store/mc/Spring14miniaod/WprimeToMuNu_M_5800_Tune4C_13TeV_pythia8/MINIAODSIM/PU20bx25_POSTLS170_V5-v1/00000/E4AD1244-2809-E411-919F-0025904B1452.root'
-        'file:///disk1/erdweg/MC_production/hadronization/test_miniAOD.root'
+        'file:///disk1/erdweg/MC_production/hadronization/powheg/13TeV/miniAOD-prod_PAT.root'
         )
     )
 

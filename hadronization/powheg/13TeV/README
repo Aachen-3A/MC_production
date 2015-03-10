@@ -1,0 +1,13 @@
+1.  Modify (id necessary) the haronizer (hadronizer_match_pu_2_cfg.py)
+
+2.  Run the hadronization
+    cmsRun -e -j had.xml hadronizer_match_pu_2_cfg.py
+    The result is the AOD file test.root
+
+3.  Run the miniAOD production
+    cmsRun miniAOD-prod_PAT.py
+    The result is the miniAOD file miniAOD-prod_PAT.root
+
+4.  Run the skimmer
+    cmsRun mc_SP14_miniAOD_cfg_localRun.py
+    You now have th final .pxlio file
