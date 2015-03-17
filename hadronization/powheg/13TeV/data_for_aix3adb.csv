@@ -1,0 +1,2 @@
+"name","datasetpath","generator","xs","filtler_effi","filter_effi_ref","kfactor","kfactor_ref","energy","globalTag","CMSSW_Version","numEvents"
+"WWToLLNuNu_13TeV_PHYS14_PU20bx25_powheg","WWToLLNuNu_13TeV_PHYS14_PU20bx25_powheg","POWHEG",10.4836,1.0,"private production",1.,,13,"PHYS14_25_V1::All","CMSSW_7_2_3_patch1",594357

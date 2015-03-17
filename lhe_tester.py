@@ -5,7 +5,7 @@ from rootpy.plotting import Hist
 
 # lhe_file = LHEAnalysis('/disk1/erdweg/MC_production/results/merged.lhe')
 # lhe_file = LHEAnalysis('/disk1/erdweg/MC_production/results/cmsgrid_final_0.lhe')
-lhe_file = LHEAnalysis('/disk1/erdweg/MC_production/results/cmsgrid_final_0.lhe')
+lhe_file = LHEAnalysis('/disk1/erdweg/MC_production/WW_powheg_leptonic/merged.lhe')
 
 for item in lhe_file.processes:
     print('process:')
@@ -83,7 +83,11 @@ from DukePlotALot import *
 for hist in hist_list:
     hist_style = sc.style_container(style = 'CMS', useRoot = False, cms=13, lumi=19700)
     hist_style.Set_additional_text('Powheg simulation')
-    
+
+    hist.SetFillColor('y')
+    hist.SetFillStyle('solid')
+
     test = plotter(sig=[hist],style=hist_style)
+    test.Set_axis(ymin=1e2,ymax=1e6)
     test.make_plot('plots/%s.pdf'%hist.GetName())
     
